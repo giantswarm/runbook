@@ -2,37 +2,25 @@ package runbook
 
 import (
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger"
 	runbooks "github.com/giantswarm/runbook/internal/pkg"
+	runbookconfig "github.com/giantswarm/runbook/pkg/runbook/config"
 )
 
-type RunbookConfig struct {
-	Logger       micrologger.Logger
-	Installation string
-	ClusterID    string
-	Context      map[string]string
-}
-
-func New(ID string, config RunbookConfig) (Runbook, error) {
+func New(ID string, config runbookconfig.RunbookConfig) (Runbook, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
 
-	if config.Installation == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.Installation must not be empty")
+	if config.K8sClient == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
 	}
 
-	if config.ClusterID == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.ClusterID must not be empty")
+	if config.Context == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Context must not be empty")
 	}
 
 	if ID == runbooks.DaemonSetNotSatisfiedRunbookID {
-		return &runbooks.DaemonSetNotSatisfiedRunbook{
-			Logger:       config.Logger,
-			Installation: config.Installation,
-			ClusterID:    config.ClusterID,
-			Context:      config.Context,
-		}, nil
+		return runbooks.NewDaemonSetNotSatisfiedRunbook(config), nil
 	}
 
 	return nil, nil
