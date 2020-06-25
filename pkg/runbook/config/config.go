@@ -8,5 +8,5 @@ import (
 type RunbookConfig struct {
 	Logger    micrologger.Logger
 	K8sClient kubernetes.Interface
-	Context   map[string]string
+	Inputs    map[string]string
 }

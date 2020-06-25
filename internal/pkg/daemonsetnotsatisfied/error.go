@@ -1,4 +1,4 @@
-package pkg
+package daemonsetnotsatisfied
 
 import (
 	"github.com/giantswarm/microerror"
