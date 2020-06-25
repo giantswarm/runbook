@@ -24,7 +24,7 @@ func (r *Runbook) getProblemData() (*problemData, error) {
 
 	// get all endpoint addresses
 	if len(endpointsList.Items) > 0 {
-		endpoints = endpointsList.Items[0];
+		endpoints = endpointsList.Items[0]
 		for _, address := range endpointsList.Items[0].Subsets[0].Addresses {
 			e2nAddressMap[address.IP] = nil
 		}

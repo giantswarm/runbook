@@ -33,14 +33,14 @@ func NewRunbook(config runbookconfig.RunbookConfig) (*Runbook, error) {
 	}
 
 	// internals
-	if config.Context == nil {
+	if config.Inputs == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Context must not be empty", config)
 	}
 
 	runbook := Runbook{
 		logger:    config.Logger,
 		k8sClient: config.K8sClient,
-		context:   config.Context,
+		context:   config.Inputs,
 	}
 
 	return &runbook, nil
