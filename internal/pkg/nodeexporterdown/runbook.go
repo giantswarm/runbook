@@ -14,13 +14,10 @@ const (
 	runbookSourceURL = "https://intranet.giantswarm.io/docs/support-and-ops/ops-recipes/node-exporter-is-down/"
 )
 
-type alertContext map[string]string
-
 type Runbook struct {
 	logger    micrologger.Logger
 	k8sClient kubernetes.Interface
-
-	context alertContext
+	input     runbookconfig.RunbookInput
 }
 
 func NewRunbook(config runbookconfig.RunbookConfig) (*Runbook, error) {
@@ -33,14 +30,14 @@ func NewRunbook(config runbookconfig.RunbookConfig) (*Runbook, error) {
 	}
 
 	// internals
-	if config.Inputs == nil {
-		return nil, microerror.Maskf(invalidConfigError, "%T.Context must not be empty", config)
+	if config.Input == nil {
+		return nil, microerror.Maskf(invalidConfigError, "%T.Input must not be empty", config)
 	}
 
 	runbook := Runbook{
 		logger:    config.Logger,
 		k8sClient: config.K8sClient,
-		context:   config.Inputs,
+		input:     config.Input,
 	}
 
 	return &runbook, nil
@@ -55,7 +52,7 @@ func (r *Runbook) GetSourceURL() string {
 }
 
 func (r *Runbook) FindProblem() ([]problem.Kind, error) {
-	data, err := r.getProblemData()
+	data, err := r.investigate()
 	if err != nil {
 		return []problem.Kind{problem.Unknown}, microerror.Mask(err)
 	}
@@ -64,7 +61,7 @@ func (r *Runbook) FindProblem() ([]problem.Kind, error) {
 }
 
 func (r *Runbook) Test() (bool, error) {
-	data, err := r.getProblemData()
+	data, err := r.investigate()
 	if err != nil {
 		return false, microerror.Mask(err)
 	}
@@ -74,7 +71,7 @@ func (r *Runbook) Test() (bool, error) {
 }
 
 func (r *Runbook) Apply() error {
-	data, err := r.getProblemData()
+	data, err := r.investigate()
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -82,15 +79,9 @@ func (r *Runbook) Apply() error {
 	for _, p := range data.problems {
 		switch p.ID {
 		case problemStaleEndpoints.ID:
-			err := r.fixStaleEndpoint(data)
-			if err != nil {
-				return microerror.Mask(err)
-			}
+			return r.fixStaleEndpoint(data)
 		case problemMissingEndpoints.ID:
-			err := r.fixMissingEndpoint(data)
-			if err != nil {
-				return microerror.Mask(err)
-			}
+			return r.fixMissingEndpoint(data)
 		}
 	}
 

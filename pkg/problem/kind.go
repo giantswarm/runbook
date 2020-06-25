@@ -1,13 +1,13 @@
 package problem
 
 var None = Kind{
-	ID: "None",
-	Description: "A problem has not been detected.",
+	ID:          "None",
+	Description: "No problem has been identified.",
 }
 
 var Unknown = Kind{
-	ID: "Unknown",
-	Description: "The problem kind cannot been detected.",
+	ID:          "Unknown",
+	Description: "This kind of problem is unknown. Welcome explorers to a new territory.",
 }
 
 type Kind struct {
@@ -15,9 +15,9 @@ type Kind struct {
 	Description string
 }
 
-func IsFound(problemKinds ...Kind) bool {
-	for _, kind := range problemKinds {
-		if kind.ID != None.ID || kind.ID != Unknown.ID {
+func IsFound(kinds ...Kind) bool {
+	for _, kind := range kinds {
+		if kind.ID != None.ID && kind.ID != Unknown.ID {
 			return true
 		}
 	}
