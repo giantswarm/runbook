@@ -1,10 +1,13 @@
 package daemonsetnotsatisfied
 
 import (
+	"errors"
+
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/giantswarm/runbook/pkg/problem"
 	runbookconfig "github.com/giantswarm/runbook/pkg/runbook/config"
 )
 
@@ -16,7 +19,7 @@ const (
 type Runbook struct {
 	logger    micrologger.Logger
 	k8sClient kubernetes.Interface
-	inputs    map[string]string
+	input     runbookconfig.RunbookInput
 }
 
 func NewDaemonSetNotSatisfiedRunbook(config runbookconfig.RunbookConfig) (*Runbook, error) {
@@ -28,13 +31,13 @@ func NewDaemonSetNotSatisfiedRunbook(config runbookconfig.RunbookConfig) (*Runbo
 		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
 	}
 
-	if config.Inputs == nil {
-		return nil, microerror.Maskf(invalidConfigError, "config.Inputs must not be empty")
+	if config.Input == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Input must not be empty")
 	}
 	runbook := Runbook{
 		logger:    config.Logger,
 		k8sClient: config.K8sClient,
-		inputs:    config.Inputs,
+		input:     config.Input,
 	}
 
 	return &runbook, nil
@@ -50,11 +53,34 @@ func (r *Runbook) GetSourceURL() string {
 
 // We check if the daemonset actually exists or not
 func (r *Runbook) Test() (bool, error) {
-	r.investigate()
-	return true, nil
+	observations, err := r.investigate()
+	if err != nil {
+		return false, microerror.Mask(err)
+	}
+
+	return problem.IsFound(observations.problem), nil
 }
 
 func (r *Runbook) Apply() error {
-	r.investigate()
-	return nil
+	observations, err := r.investigate()
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	switch observations.problem.ID {
+	case incorrectStatusReportedByKubelet.ID:
+		return r.fixIncorrectStatusReportedByKubelet(observations)
+	case quayIsDown.ID:
+		return r.fixQuayDown(observations)
+	case podsStuckInCrashLoopBackOff.ID:
+		return r.fixPodsStuckInCrashLoopBackOff(observations)
+	case podsCanNotBeScheduled.ID:
+		return r.fixPodsCanNotBeScheduled(observations)
+	case hostPortInConflict.ID:
+		return r.fixHostPortInConflict(observations)
+	case problem.Unknown.ID:
+		return errors.New(problem.Unknown.Description)
+	default:
+		return nil
+	}
 }

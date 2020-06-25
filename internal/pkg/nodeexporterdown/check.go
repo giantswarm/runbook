@@ -8,7 +8,7 @@ import (
 	"github.com/giantswarm/runbook/pkg/problem"
 )
 
-func (r *Runbook) getProblemData() (*problemData, error) {
+func (r *Runbook) investigate() (*problemData, error) {
 	// endpoint -> node address map
 	e2nAddressMap := make(map[string]*string)
 
