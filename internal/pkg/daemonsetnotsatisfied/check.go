@@ -2,6 +2,7 @@ package daemonsetnotsatisfied
 
 import (
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/runbook/pkg/quay"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +48,12 @@ func (r *Runbook) investigate() error {
 			}
 		} else {
 			if r.isAnyContainerInImagePullBackOff(notReadyPods) {
-				if r.isQuayDown() {
+				isQuayDown, err := quay.IsQuayDown()
+				if err != nil {
+					return microerror.Mask(err)
+				}
+
+				if isQuayDown {
 					r.fixQuayDown(daemonSet, notReadyPods)
 				} else {
 					// TODO No Clue what to do
@@ -77,11 +83,6 @@ func (r *Runbook) investigate() error {
 }
 
 func (r *Runbook) isAnyContainerInImagePullBackOff(pods []corev1.Pod) bool {
-	// TODO implement this
-	return false
-}
-
-func (r *Runbook) isQuayDown() bool {
 	// TODO implement this
 	return false
 }
