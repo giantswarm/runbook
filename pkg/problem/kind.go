@@ -15,10 +15,12 @@ type Kind struct {
 	Description string
 }
 
-func IsFound(kind Kind) bool {
-	if kind.ID == None.ID || kind.ID == Unknown.ID {
-		return false
-	} else {
-		return true
+func IsFound(problemKinds ...Kind) bool {
+	for _, kind := range problemKinds {
+		if kind.ID != None.ID || kind.ID != Unknown.ID {
+			return true
+		}
 	}
+
+	return false
 }

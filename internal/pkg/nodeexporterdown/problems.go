@@ -20,7 +20,7 @@ var problemMissingEndpoints = problem.Kind{
 }
 
 type problemData struct {
-	problemKind   problem.Kind
-	endpoints     v1.Endpoints
-	nodeAddresses []string
+	problems       []problem.Kind
+	endpoints      v1.Endpoints
+	staleAddresses []string
 }

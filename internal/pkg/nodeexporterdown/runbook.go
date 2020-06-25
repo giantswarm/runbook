@@ -54,13 +54,13 @@ func (r *Runbook) GetSourceURL() string {
 	return runbookSourceURL
 }
 
-func (r *Runbook) FindProblem() (problem.Kind, error) {
+func (r *Runbook) FindProblem() ([]problem.Kind, error) {
 	data, err := r.getProblemData()
 	if err != nil {
-		return problem.Unknown, microerror.Mask(err)
+		return []problem.Kind{problem.Unknown}, microerror.Mask(err)
 	}
 
-	return data.problemKind, nil
+	return data.problems, nil
 }
 
 func (r *Runbook) Test() (bool, error) {
@@ -69,25 +69,30 @@ func (r *Runbook) Test() (bool, error) {
 		return false, microerror.Mask(err)
 	}
 
-	problemFound := problem.IsFound(data.problemKind)
+	problemFound := problem.IsFound(data.problems...)
 	return problemFound, nil
 }
 
 func (r *Runbook) Apply() error {
-	var err error
 	data, err := r.getProblemData()
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	switch data.problemKind.ID {
-	case problemStaleEndpoints.ID:
-		err = r.fixStaleEndpoint(data)
-	case problemMissingEndpoints.ID:
-		err = r.fixMissingEndpoint(data)
-	default:
-		err = nil
+	for _, p := range data.problems {
+		switch p.ID {
+		case problemStaleEndpoints.ID:
+			err := r.fixStaleEndpoint(data)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+		case problemMissingEndpoints.ID:
+			err := r.fixMissingEndpoint(data)
+			if err != nil {
+				return microerror.Mask(err)
+			}
+		}
 	}
 
-	return err
+	return nil
 }
