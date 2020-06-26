@@ -25,10 +25,14 @@ func (r *Runbook) investigate() (*problemData, error) {
 	// get all endpoint addresses
 	r.logger.Log("level", "debug", "message", "checking existing endpoint IP addresses")
 	if len(endpointsList.Items) > 0 {
-		endpoints = endpointsList.Items[0]
-		for _, address := range endpointsList.Items[0].Subsets[0].Addresses {
-			e2nAddressMap[address.IP] = nil
-			r.logger.Log("level", "debug", "foundEndpointIP", address.IP)
+		// endpoints = endpointsList.Items[0]
+		for _, endpoints := range endpointsList.Items {
+			for _, subset := range endpoints.Subsets {
+				for _, address := range subset.Addresses {
+					e2nAddressMap[address.IP] = nil
+					r.logger.Log("level", "debug", "foundEndpointIP", address.IP)
+				}
+			}
 		}
 	}
 
