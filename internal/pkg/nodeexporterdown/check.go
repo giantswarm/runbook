@@ -27,6 +27,10 @@ func (r *Runbook) investigate() (*problemData, error) {
 	if len(endpointsList.Items) > 0 {
 		// endpoints = endpointsList.Items[0]
 		for _, endpoints := range endpointsList.Items {
+			if endpoints.ObjectMeta.Name != "node-exporter" {
+				continue
+			}
+
 			for _, subset := range endpoints.Subsets {
 				for _, address := range subset.Addresses {
 					e2nAddressMap[address.IP] = nil
@@ -64,7 +68,7 @@ func (r *Runbook) investigate() (*problemData, error) {
 		if nodeAddress == nil {
 			// endpoint address does not have a corresponding node address
 			staleAddresses = append(staleAddresses, endpointAddress)
-			r.logger.Log("level", "debug", "staleEndpointIP", staleAddresses)
+			r.logger.Log("level", "debug", "staleEndpointIP", endpointAddress)
 		}
 	}
 
