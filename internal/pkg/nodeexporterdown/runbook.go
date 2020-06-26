@@ -43,7 +43,7 @@ func NewRunbook(config Config) (*Runbook, error) {
 	}
 
 	runbook := Runbook{
-		logger:    config.Logger,
+		logger:    config.Logger.With("runbook", RunbookID),
 		k8sClient: config.K8sClient,
 		input:     config.Input,
 	}
@@ -69,6 +69,7 @@ func (r *Runbook) FindProblem() ([]problem.Kind, error) {
 }
 
 func (r *Runbook) Test() (bool, error) {
+	r.logger.Log("level", "debug", "message", "Investigating the issue")
 	data, err := r.investigate()
 	if err != nil {
 		return false, microerror.Mask(err)

@@ -23,14 +23,17 @@ func (r *Runbook) investigate() (*problemData, error) {
 	}
 
 	// get all endpoint addresses
+	r.logger.Log("level", "debug", "message", "checking existing endpoint IP addresses")
 	if len(endpointsList.Items) > 0 {
 		endpoints = endpointsList.Items[0]
 		for _, address := range endpointsList.Items[0].Subsets[0].Addresses {
 			e2nAddressMap[address.IP] = nil
+			r.logger.Log("level", "debug", "foundEndpointIP", address.IP)
 		}
 	}
 
 	// get all nodes
+	r.logger.Log("level", "debug", "message", "checking node IP addresses")
 	nodes, err := r.k8sClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, microerror.Mask(err)
@@ -39,12 +42,16 @@ func (r *Runbook) investigate() (*problemData, error) {
 	// get all node addresses and try to map them to endpoint addresses
 	for _, node := range nodes.Items {
 		nodeAddress := node.ObjectMeta.Labels["ip"]
+		r.logger.Log("level", "debug", "foundNodeIP", nodeAddress)
+
 		if _, ok := e2nAddressMap[nodeAddress]; ok {
 			// found endpoint address for node address
 			e2nAddressMap[nodeAddress] = &nodeAddress
+			r.logger.Log("level", "debug", "correctEndpointIP", nodeAddress)
 		} else {
 			// node address is missing in endpoints list
 			missingAddresses = append(missingAddresses, nodeAddress)
+			r.logger.Log("level", "debug", "missingEndpointIP", nodeAddress)
 		}
 	}
 
@@ -53,6 +60,7 @@ func (r *Runbook) investigate() (*problemData, error) {
 		if nodeAddress == nil {
 			// endpoint address does not have a corresponding node address
 			staleAddresses = append(staleAddresses, endpointAddress)
+			r.logger.Log("level", "debug", "staleEndpointIP", staleAddresses)
 		}
 	}
 
@@ -65,11 +73,13 @@ func (r *Runbook) investigate() (*problemData, error) {
 		// we need to remove stale endpoints
 		problemData.problems = append(problemData.problems, problemStaleEndpoints)
 		problemData.staleAddresses = staleAddresses
+		r.logger.Log("level", "debug", "problem", problemStaleEndpoints.ID)
 	}
 
 	if len(missingAddresses) > 0 {
 		// we need to trigger endpoint addition
 		problemData.problems = append(problemData.problems, problemMissingEndpoints)
+		r.logger.Log("level", "debug", "problem", problemMissingEndpoints.ID)
 	}
 
 	return &problemData, nil
