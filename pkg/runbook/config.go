@@ -1,14 +1,16 @@
-package runbookconfig
+package runbook
 
 import (
 	"github.com/giantswarm/micrologger"
 	"k8s.io/client-go/kubernetes"
 )
 
-type RunbookInput map[string]string
+type Input map[string]string
 
-type RunbookConfig struct {
+type Config struct {
 	Logger    micrologger.Logger
 	K8sClient kubernetes.Interface
-	Input     RunbookInput
+
+	ID    string
+	Input Input
 }

@@ -6,21 +6,29 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/runbook/pkg/problem"
-	runbookconfig "github.com/giantswarm/runbook/pkg/runbook/config"
 )
 
 const (
-	runbookID        = "node-exporter-is-down"
+	RunbookID        = "node-exporter-is-down"
 	runbookSourceURL = "https://intranet.giantswarm.io/docs/support-and-ops/ops-recipes/node-exporter-is-down/"
 )
+
+type Input map[string]string
+
+type Config struct {
+	Logger    micrologger.Logger
+	K8sClient kubernetes.Interface
+
+	Input Input
+}
 
 type Runbook struct {
 	logger    micrologger.Logger
 	k8sClient kubernetes.Interface
-	input     runbookconfig.RunbookInput
+	input     Input
 }
 
-func NewRunbook(config runbookconfig.RunbookConfig) (*Runbook, error) {
+func NewRunbook(config Config) (*Runbook, error) {
 	// dependencies
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "%T.Logger must not be empty", config)
@@ -44,7 +52,7 @@ func NewRunbook(config runbookconfig.RunbookConfig) (*Runbook, error) {
 }
 
 func (r *Runbook) GetID() string {
-	return runbookID
+	return RunbookID
 }
 
 func (r *Runbook) GetSourceURL() string {

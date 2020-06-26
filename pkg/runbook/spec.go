@@ -1,6 +1,6 @@
 package runbook
 
-type Runbook interface {
+type Interface interface {
 	// Get the runbook identifier
 	GetID() string
 
