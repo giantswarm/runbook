@@ -8,21 +8,30 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/runbook/pkg/problem"
-	runbookconfig "github.com/giantswarm/runbook/pkg/runbook/config"
 )
 
 const (
-	runbookId        = "daemonset-not-satisfied"
+	RunbookID        = "daemonset-not-satisfied"
 	runbookSourceURL = "https://intranet.giantswarm.io/docs/support-and-ops/ops-recipes/daemonset-not-satisfied/"
 )
+
+type Input map[string]string
+
+type Config struct {
+	Logger    micrologger.Logger
+	K8sClient kubernetes.Interface
+
+	Input Input
+}
 
 type Runbook struct {
 	logger    micrologger.Logger
 	k8sClient kubernetes.Interface
-	input     runbookconfig.RunbookInput
+
+	input Input
 }
 
-func NewDaemonSetNotSatisfiedRunbook(config runbookconfig.RunbookConfig) (*Runbook, error) {
+func NewDaemonSetNotSatisfiedRunbook(config Config) (*Runbook, error) {
 	if config.Logger == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Logger must not be empty")
 	}
@@ -44,7 +53,7 @@ func NewDaemonSetNotSatisfiedRunbook(config runbookconfig.RunbookConfig) (*Runbo
 }
 
 func (r *Runbook) GetID() string {
-	return runbookId
+	return RunbookID
 }
 
 func (r *Runbook) GetSourceURL() string {
