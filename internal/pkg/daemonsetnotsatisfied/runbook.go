@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/giantswarm/runbook/pkg/problem"
+	"github.com/giantswarm/runbook/pkg/runner/sshcommand"
 )
 
 const (
@@ -20,6 +21,7 @@ type Input map[string]string
 type Config struct {
 	Logger    micrologger.Logger
 	K8sClient kubernetes.Interface
+	Runner    sshcommand.Interface
 
 	Input Input
 }
@@ -27,6 +29,7 @@ type Config struct {
 type Runbook struct {
 	logger    micrologger.Logger
 	k8sClient kubernetes.Interface
+	runner    sshcommand.Interface
 
 	input Input
 }
@@ -40,12 +43,17 @@ func NewDaemonSetNotSatisfiedRunbook(config Config) (*Runbook, error) {
 		return nil, microerror.Maskf(invalidConfigError, "config.K8sClient must not be empty")
 	}
 
+	if config.Runner == nil {
+		return nil, microerror.Maskf(invalidConfigError, "config.Runner must not be empty")
+	}
+
 	if config.Input == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.Input must not be empty")
 	}
 	runbook := Runbook{
 		logger:    config.Logger,
 		k8sClient: config.K8sClient,
+		runner:    config.Runner,
 		input:     config.Input,
 	}
 
