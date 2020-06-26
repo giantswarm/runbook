@@ -44,7 +44,6 @@ func (r *Runbook) investigate() (*problemData, error) {
 		notReadyPods := util.FilterNotReadyPods(pods)
 
 		if int32(len(pods)) == daemonSet.Status.DesiredNumberScheduled && len(notReadyPods) > 0 {
-			// See https://github.com/giantswarm/giantswarm/issues/8905
 			problemData.problem = incorrectStatusReportedByKubelet
 			problemData.pods = notReadyPods
 		} else if podsWithContainersInImagePullBackOff := util.FilterPodsWithContainersInImagePullBackOff(notReadyPods); len(podsWithContainersInImagePullBackOff) > 0 {

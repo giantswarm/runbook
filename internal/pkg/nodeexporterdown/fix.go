@@ -8,7 +8,10 @@ import (
 	"github.com/giantswarm/microerror"
 )
 
-const appLabel = "app"
+const (
+	nodeExporterNamespace = "kube-system"
+	appLabel              = "app"
+)
 
 func (r *Runbook) fixStaleEndpoint(data *problemData) error {
 	staleAddresses := data.staleAddresses
@@ -23,7 +26,7 @@ func (r *Runbook) fixStaleEndpoint(data *problemData) error {
 	}
 
 	e.Subsets[0].Addresses = endpointAddresses
-	_, err := r.k8sClient.CoreV1().Endpoints("kube-system").Update(e)
+	_, err := r.k8sClient.CoreV1().Endpoints(nodeExporterNamespace).Update(e)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -44,7 +47,7 @@ func (r *Runbook) fixMissingEndpoint(data *problemData) error {
 	}
 
 	// by deleting node-exporter pods, which will then be recreated, we are trigger endpoint addition
-	err := r.k8sClient.CoreV1().Pods("kube-system").DeleteCollection(nil, listOptions)
+	err := r.k8sClient.CoreV1().Pods(nodeExporterNamespace).DeleteCollection(nil, listOptions)
 	if err != nil {
 		return microerror.Mask(err)
 	}

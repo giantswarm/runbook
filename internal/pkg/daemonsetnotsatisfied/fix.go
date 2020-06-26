@@ -1,19 +1,27 @@
 package daemonsetnotsatisfied
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/giantswarm/microerror"
+)
 
 func (r *Runbook) fixIncorrectStatusReportedByKubelet(data *problemData) error {
+	// See https://github.com/giantswarm/giantswarm/issues/8905
 	var affectedNodes []string
 	for _, pod := range data.pods {
 		affectedNodes = append(affectedNodes, pod.Spec.NodeName)
 	}
-	// TODO restart the kubelets on the affected nodes
-	/*
-		Use opsctl ssh to get to the node where the misreported pod is running.
-		Restart the kubelet on this node (sudo systemctl restart k8s-kubelet).
-		The DaemonSet should be satisfied once this is done for all affected nodes
-	*/
-	return errors.New("Not implemented :" + incorrectStatusReportedByKubelet.Description)
+
+	_, nodeName := range affectedNodes {
+		err:= r.runner.Run(nodeName, "sudo systemctl restart k8s-kubelet")
+		if err != nil {
+			return microerror.Mask(err)
+		}
+	}
+	
+	return nil
 }
 
 func (r *Runbook) fixQuayDown(data *problemData) error {
