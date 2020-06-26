@@ -51,7 +51,7 @@ func NewDaemonSetNotSatisfiedRunbook(config Config) (*Runbook, error) {
 		return nil, microerror.Maskf(invalidConfigError, "config.Input must not be empty")
 	}
 	runbook := Runbook{
-		logger:    config.Logger,
+		logger:    config.Logger.With("runbook", RunbookID),
 		k8sClient: config.K8sClient,
 		runner:    config.Runner,
 		input:     config.Input,
@@ -70,6 +70,7 @@ func (r *Runbook) GetSourceURL() string {
 
 // We check if the daemonset actually exists or not
 func (r *Runbook) Test() (bool, error) {
+	r.logger.Log("level", "debug", "message", "Investigating the issue")
 	observations, err := r.investigate()
 	if err != nil {
 		return false, microerror.Mask(err)
