@@ -40,13 +40,20 @@ func (r *Runbook) investigate() (*problemData, error) {
 		daemonSet: daemonSet,
 	}
 
+	r.logger.Log("level", "debug", "message", "checking if the number of currently scheduled pods is inferior to the number of desired pods")
 	if daemonSet.Status.CurrentNumberScheduled < daemonSet.Status.DesiredNumberScheduled {
 		notReadyPods := util.FilterNotReadyPods(pods)
 
+		r.logger.Log("level", "debug", "message", "checking if the kubelet is correctly reporting its status")
 		if int32(len(pods)) == daemonSet.Status.DesiredNumberScheduled && len(notReadyPods) > 0 {
 			problemData.problem = incorrectStatusReportedByKubelet
 			problemData.pods = notReadyPods
-		} else if podsWithContainersInImagePullBackOff := util.FilterPodsWithContainersInImagePullBackOff(notReadyPods); len(podsWithContainersInImagePullBackOff) > 0 {
+			return &problemData, nil
+		}
+
+		r.logger.Log("level", "debug", "message", "checking if any pod is in CrashLoopBackOff")
+		if podsWithContainersInImagePullBackOff := util.FilterPodsWithContainersInImagePullBackOff(notReadyPods); len(podsWithContainersInImagePullBackOff) > 0 {
+
 			isQuayDown, err := quay.IsQuayDown()
 			if err != nil {
 				return nil, microerror.Mask(err)
@@ -58,18 +65,30 @@ func (r *Runbook) investigate() (*problemData, error) {
 				problemData.problem = podsStuckInCrashLoopBackOff
 			}
 			problemData.pods = podsWithContainersInImagePullBackOff
-		} else if unschedulablePods := util.FilterUnschedulablePods(notReadyPods); len(unschedulablePods) > 0 {
+			return &problemData, nil
+		}
+
+		r.logger.Log("level", "debug", "message", "checking if any pod is Unschedulable")
+		if unschedulablePods := util.FilterUnschedulablePods(notReadyPods); len(unschedulablePods) > 0 {
 			problemData.problem = podsCanNotBeScheduled
 			problemData.pods = unschedulablePods
-		} else if podsWithHostPortConflicts := util.FilterPodsWithHostPortConflict(notReadyPods); r.isHostPortInConflict(notReadyPods) {
+			return &problemData, nil
+		}
+
+		r.logger.Log("level", "debug", "message", "checking if any pod has any host port conflict")
+		if podsWithHostPortConflicts := util.FilterPodsWithHostPortConflict(notReadyPods); r.isHostPortInConflict(notReadyPods) {
 			problemData.problem = hostPortInConflict
 			problemData.pods = podsWithHostPortConflicts
-		} else {
-			problemData.problem = problem.Unknown
+			return &problemData, nil
 		}
-	} else {
-		problemData.problem = problem.None
+
+		r.logger.Log("level", "debug", "message", "The source of the problem is unknown")
+		problemData.problem = problem.Unknown
+		return &problemData, nil
 	}
+
+	r.logger.Log("level", "debug", "message", "No problem was detected")
+	problemData.problem = problem.None
 	return &problemData, nil
 }
 

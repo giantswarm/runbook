@@ -9,18 +9,14 @@ import (
 
 func (r *Runbook) fixIncorrectStatusReportedByKubelet(data *problemData) error {
 	// See https://github.com/giantswarm/giantswarm/issues/8905
-	var affectedNodes []string
 	for _, pod := range data.pods {
-		affectedNodes = append(affectedNodes, pod.Spec.NodeName)
-	}
-
-	_, nodeName := range affectedNodes {
-		err:= r.runner.Run(nodeName, "sudo systemctl restart k8s-kubelet")
+		r.logger.Log("level", "info", "message", fmt.Sprintf("Restarting the kubelet for %s", pod.Spec.NodeName))
+		err := r.runner.Run(pod.Spec.NodeName, "sudo systemctl restart k8s-kubelet")
 		if err != nil {
 			return microerror.Mask(err)
 		}
 	}
-	
+
 	return nil
 }
 
